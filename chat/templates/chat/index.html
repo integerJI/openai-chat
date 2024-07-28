@@ -1,0 +1,126 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with GPT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #F1F1F1;
+        }
+        #chat-box {
+            width: 100%;
+            max-width: 600px;
+            height: 80%;
+            padding: 10px;
+            overflow-y: scroll;
+            background-color: #F1F1F1;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            margin: 5px 10px;
+            padding: 10px;
+            border-radius: 12px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: black;
+            color: white;
+            align-self: flex-end;
+            border-radius: 12px 12px 0px 12px;
+        }
+        .bot-message {
+            background-color: white;
+            color: black;
+            align-self: flex-start;
+            border-radius: 12px 12px 12px 0px;
+            border: 1px solid #ccc;
+        }
+        #message-input {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            margin: 10px 0;
+            padding: 0 10px;
+        }
+        #message-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 18px;
+            outline: none;
+        }
+        #message-input button {
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 0 15px;
+            margin-left: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #message-input button:focus,
+        #message-input input:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-box">
+        <!-- Messages will be displayed here -->
+    </div>
+    <div id="message-input">
+        <input type="text" id="input-box" placeholder="Type a message" onkeypress="checkEnter(event)">
+        <button onclick="startNewChat()">➔</button>
+    </div>
+
+    <script>
+        function checkEnter(event) {
+            if (event.key === "Enter") {
+                startNewChat();
+            }
+        }
+
+        function startNewChat() {
+            const inputBox = document.getElementById('input-box');
+            const message = inputBox.value.trim();
+            if (message === '') return;
+
+            // Create a form and submit it to create a new session
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/';
+
+            const messageInput = document.createElement('input');
+            messageInput.type = 'hidden';
+            messageInput.name = 'message';
+            messageInput.value = message;
+            form.appendChild(messageInput);
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = '{{ csrf_token }}';
+            form.appendChild(csrfInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!-- session_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Session</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #F1F1F1;
+        }
+
+        #chat-box {
+            width: 100%;
+            max-width: 600px;
+            height: 80%;
+            padding: 10px;
+            overflow-y: scroll;
+            background-color: #F1F1F1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            margin: 5px 10px;
+            padding: 10px;
+            border-radius: 12px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: black;
+            color: white;
+            align-self: flex-end;
+            border-radius: 12px 12px 0px 12px;
+        }
+
+        .bot-message {
+            background-color: white;
+            color: black;
+            align-self: flex-start;
+            border-radius: 12px 12px 12px 0px;
+            border: 1px solid #ccc;
+        }
+
+        #message-input {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            margin: 10px 0;
+            padding: 0 10px;
+        }
+
+        #message-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 18px;
+            outline: none;
+        }
+
+        #message-input button {
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 0 15px;
+            margin-left: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #message-input button:focus,
+        #message-input input:focus {
+            outline: none;
+        }
+
+        #message-input button:disabled,
+        #message-input input:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-box">
+        {% for message in messages %}
+            <div class="message {% if message.is_user %}user-message{% else %}bot-message{% endif %}">
+                <p>{{ message.message_text }}</p>
+            </div>
+        {% endfor %}
+    </div>
+    <div id="message-input">
+        <input type="text" id="input-box" placeholder="도움이 필요한 것을 물어보세요." onkeypress="checkEnter(event)">
+        <button id="send-button" onclick="sendMessage()">➔</button>
+    </div>
+
+    <script>
+        const sessionId = "{{ session_id }}";
+
+        function scrollToBottom() {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function checkEnter(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const inputBox = document.getElementById('input-box');
+            const sendButton = document.getElementById('send-button');
+            const message = inputBox.value.trim();
+            if (message === '') return;
+
+            // Disable input and button
+            inputBox.disabled = true;
+            sendButton.disabled = true;
+
+            // Display the user's message
+            displayMessage(message, true);
+
+            // Display typing indicator
+            const typingMessageId = displayMessage('입력중...', false);
+
+            // Send the message to the server
+            fetch(`/api/session/${sessionId}/messages/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove typing indicator and display the bot's response
+                updateMessage(typingMessageId, data.message_text);
+                
+                // Enable input and button
+                inputBox.disabled = false;
+                sendButton.disabled = false;
+                inputBox.focus();
+            });
+
+            inputBox.value = '';
+        }
+
+        function displayMessage(message, isUser) {
+            const chatBox = document.getElementById('chat-box');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
+            messageElement.innerHTML = `<p>${message}</p>`;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            return messageElement;
+        }
+
+        function updateMessage(messageElement, newMessage) {
+            messageElement.innerHTML = `<p>${newMessage}</p>`;
+        }
+
+        // Scroll to the bottom when the page loads
+        window.onload = function() {
+            scrollToBottom();
+        };
+    </script>
+</body>
+</html>
