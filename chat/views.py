@@ -132,7 +132,7 @@ class ChatView(View):
 
             Message.objects.create(chat_session=chat_session, message_text=bot_message, is_user=False)
 
-        return redirect(f'/v1/session/{session_id}/')
+        return redirect(f'/v1/prompt/{session_id}/')
 
 class ChatSessionView(APIView):
     def post(self, request):
