@@ -32,7 +32,6 @@ class MessageView(APIView):
         if not user_message:
             return Response({"error": "User message cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 사용자 메시지 저장
         Message.objects.create(chat_session=chat_session, message_text=user_message, is_user=True)
 
         if "체크리스트" in user_message.lower():
@@ -47,7 +46,6 @@ class MessageView(APIView):
             ]
 
             try:
-                # 외부 API 호출 - 체크리스트 생성 (SSL 검증 무시)
                 response = requests.post(
                     "https://s-class.koyeb.app/v1/checklists",
                     headers={
@@ -58,11 +56,9 @@ class MessageView(APIView):
                     verify=False  # SSL 검증 무시
                 )
 
-                # 요청이 성공했는지 확인 (201 상태 코드 확인)
                 if response.status_code == 201:
                     checklistId = response.json().get("id")
                     
-                    # 체크박스 항목 추가
                     for title in checklist_titles:
                         checkbox_response = requests.post(
                             f"https://s-class.koyeb.app/v1/checklists/{checklistId}/checkboxes",
@@ -76,18 +72,15 @@ class MessageView(APIView):
                         if checkbox_response.status_code != 201:
                             return Response({"error": f"Failed to add checklist item: {title}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                     
-                    # 최종 메시지 생성
                     bot_message = f"체크리스트가 생성되었습니다. 항목을 확인하려면 여기를 클릭하세요: https://s-class.koyeb.app/v1/checklists/{checklistId}/checkboxes"
                 else:
                     return Response({"error": "Failed to create checklist."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             except Exception as e:
-                # 예외 발생 시 로깅
                 print("Exception during API call:", str(e))
                 return Response({"error": "An error occurred while trying to create the checklist."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         else:
-            # OpenAI API를 이용한 응답 생성
             try:
                 response = openai.ChatCompletion.create(
                     model="gpt-4",
@@ -121,16 +114,13 @@ class ChatView(View):
         return render(request, 'chat/index.html')
 
     def post(self, request):
-        # 새로운 세션 생성
         session_id = str(uuid.uuid4())
         chat_session = ChatSession.objects.create(session_id=session_id)
 
-        # 첫 번째 메시지 저장
         user_message = request.POST.get('message')
         if user_message:
             Message.objects.create(chat_session=chat_session, message_text=user_message, is_user=True)
             
-            # OpenAI API를 이용한 응답 생성
             response = openai.ChatCompletion.create(
                 model="gpt-4",
                 messages=[
@@ -140,11 +130,9 @@ class ChatView(View):
             )
             bot_message = response.choices[0].message['content'].strip()
 
-            # 봇 메시지 저장
             Message.objects.create(chat_session=chat_session, message_text=bot_message, is_user=False)
 
-        # 세션 상세 페이지로 리다이렉트
-        return redirect(f'/api/session/{session_id}/')
+        return redirect(f'/v1/session/{session_id}/')
 
 class ChatSessionView(APIView):
     def post(self, request):

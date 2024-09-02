@@ -139,7 +139,7 @@
             const typingMessageId = displayMessage('입력중...', false);
 
             // Send the message to the server
-            fetch(`/api/session/${sessionId}/messages/`, {
+            fetch(`/v1/session/${sessionId}/messages/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
