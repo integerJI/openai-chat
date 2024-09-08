@@ -6,14 +6,14 @@ from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from .models import ChatSession, Message
 from .serializers import ChatSessionSerializer, MessageSerializer
 import uuid
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from mychatbot.utils import custom_response
+from rest_framework import status
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -30,7 +30,7 @@ class MessageView(APIView):
         user_message = request.data.get('message')
 
         if not user_message:
-            return Response({"error": "User message cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
+            return custom_response({"error": "User message cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
 
         Message.objects.create(chat_session=chat_session, message_text=user_message, is_user=True)
 
@@ -70,15 +70,15 @@ class MessageView(APIView):
                             verify=False  # SSL 검증 무시
                         )
                         if checkbox_response.status_code != 201:
-                            return Response({"error": f"Failed to add checklist item: {title}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                            return custom_response({"error": f"Failed to add checklist item: {title}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                     
                     bot_message = f"체크리스트가 생성되었습니다. 항목을 확인하려면 여기를 클릭하세요: https://s-class.koyeb.app/v1/checklists/{checklistId}/checkboxes"
                 else:
-                    return Response({"error": "Failed to create checklist."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    return custom_response({"error": "Failed to create checklist."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             except Exception as e:
                 print("Exception during API call:", str(e))
-                return Response({"error": "An error occurred while trying to create the checklist."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return custom_response({"error": "An error occurred while trying to create the checklist."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         else:
             try:
@@ -91,13 +91,13 @@ class MessageView(APIView):
                 )
                 bot_message = response.choices[0].message['content'].strip()
             except Exception as e:
-                return Response({"error": "Failed to get a response from OpenAI."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return custom_response({"error": "Failed to get a response from OpenAI."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         if bot_message:
             bot_message_obj = Message.objects.create(chat_session=chat_session, message_text=bot_message, is_user=False)
-            return Response(MessageSerializer(bot_message_obj).data, status=status.HTTP_201_CREATED)
+            return custom_response(MessageSerializer(bot_message_obj).data, status=status.HTTP_201_CREATED)
         else:
-            return Response({"error": "Empty response from OpenAI."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return custom_response({"error": "Empty response from OpenAI."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @swagger_auto_schema(
         responses={200: ChatSessionSerializer}
@@ -105,7 +105,7 @@ class MessageView(APIView):
     def get(self, request, session_id):
         chat_session = get_object_or_404(ChatSession, session_id=session_id)
         serializer = ChatSessionSerializer(chat_session)
-        return Response(serializer.data)
+        return custom_response(serializer.data)
 
 openai.api_key = settings.OPENAI_API_KEY
 
@@ -139,7 +139,7 @@ class ChatSessionView(APIView):
         session_id = str(uuid.uuid4())
         chat_session = ChatSession.objects.create(session_id=session_id)
         serializer = ChatSessionSerializer(chat_session)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return custom_response(serializer.data, status=status.HTTP_201_CREATED)
 
 class MessageRequestSerializer(serializers.Serializer):
     message = serializers.CharField()
