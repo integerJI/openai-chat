@@ -53,11 +53,11 @@ class MessageView(APIView):
                         "Content-Type": "application/json"
                     },
                     json={"userId": session_id},
-                    verify=False  # SSL 검증 무시
+                    verify=False
                 )
 
                 if response.status_code == 201:
-                    checklistId = response.json().get("id")
+                    checklistId = checklistId = response.json().get("data", {}).get("id")
                     
                     for title in checklist_titles:
                         checkbox_response = requests.post(
@@ -67,10 +67,11 @@ class MessageView(APIView):
                                 "Content-Type": "application/json"
                             },
                             json={"checklistId": checklistId, "label": title, "userId": session_id},
-                            verify=False  # SSL 검증 무시
+                            verify=False
                         )
+
                         if checkbox_response.status_code != 201:
-                            return custom_response({"error": f"Failed to add checklist item: {title}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                            return custom_response({"error": f"Failed to add checklist item: {checkbox_response.text}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                     
                     bot_message = f"체크리스트가 생성되었습니다. 항목을 확인하려면 여기를 클릭하세요: https://s-class.koyeb.app/v1/checklists/{checklistId}/checkboxes"
                 else:
