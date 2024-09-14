@@ -26,11 +26,15 @@ class MessageView(APIView):
         responses={201: MessageSerializer, 400: 'Bad Request', 500: 'Internal Server Error'}
     )
     def post(self, request, session_id):
+        # session_id로 ChatSession을 가져오고, 해당 session의 userId를 사용
         chat_session = get_object_or_404(ChatSession, session_id=session_id)
         user_message = request.data.get('message')
 
         if not user_message:
             return custom_response({"error": "User message cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ChatSession에서 userId를 추출
+        user_id = chat_session.user_id
 
         Message.objects.create(chat_session=chat_session, message_text=user_message, is_user=True)
 
@@ -52,12 +56,12 @@ class MessageView(APIView):
                         "accept": "application/json",
                         "Content-Type": "application/json"
                     },
-                    json={"userId": session_id},
+                    json={"userId": user_id},  # userId 사용
                     verify=False
                 )
 
                 if response.status_code == 201:
-                    checklistId = checklistId = response.json().get("data", {}).get("id")
+                    checklistId = response.json().get("data", {}).get("id")
                     
                     for title in checklist_titles:
                         checkbox_response = requests.post(
@@ -66,7 +70,7 @@ class MessageView(APIView):
                                 "accept": "application/json",
                                 "Content-Type": "application/json"
                             },
-                            json={"checklistId": checklistId, "label": title, "userId": session_id},
+                            json={"checklistId": checklistId, "label": title, "userId": user_id},  # userId 사용
                             verify=False
                         )
 
@@ -99,7 +103,7 @@ class MessageView(APIView):
             return custom_response(MessageSerializer(bot_message_obj).data, status=status.HTTP_201_CREATED)
         else:
             return custom_response({"error": "Empty response from OpenAI."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        
     @swagger_auto_schema(
         responses={200: ChatSessionSerializer}
     )
