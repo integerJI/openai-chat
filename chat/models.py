@@ -4,6 +4,7 @@ from django.db import models
 
 class ChatSession(models.Model):
     session_id = models.CharField(max_length=255, unique=True)
+    user_id = models.CharField(max_length=100, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Message(models.Model):

@@ -134,14 +134,47 @@ class ChatView(View):
             Message.objects.create(chat_session=chat_session, message_text=bot_message, is_user=False)
 
         return redirect(f'/v1/prompt/{session_id}/')
+    
+class ChatSessionRequestSerializer(serializers.Serializer):
+    userId = serializers.CharField()
+
+class ChatSessionListResponseSerializer(serializers.Serializer):
+    session_ids = serializers.ListField(child=serializers.CharField())
 
 class ChatSessionView(APIView):
+    @swagger_auto_schema(
+        request_body=ChatSessionRequestSerializer,
+        responses={201: ChatSessionSerializer, 400: 'Bad Request'}
+    )
     def post(self, request):
         session_id = str(uuid.uuid4())
-        chat_session = ChatSession.objects.create(session_id=session_id)
+        user_id = request.data.get('userId')
+
+        if not user_id:
+            return custom_response({"error": "userId is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        chat_session = ChatSession.objects.create(session_id=session_id, user_id=user_id)
         serializer = ChatSessionSerializer(chat_session)
+
         return custom_response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @swagger_auto_schema(
+        query_serializer=ChatSessionRequestSerializer,
+        responses={200: ChatSessionListResponseSerializer, 400: 'Bad Request', 404: 'Not Found'}
+    )
+    def get(self, request):
+        user_id = request.query_params.get('userId')
+
+        if not user_id:
+            return custom_response({"error": "userId is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        session_ids = ChatSession.objects.filter(user_id=user_id).values_list('session_id', flat=True)
+
+        if not session_ids:
+            return custom_response({"error": "No sessions found for the given userId."}, status=status.HTTP_404_NOT_FOUND)
+
+        return custom_response({"session_ids": list(session_ids)}, status=status.HTTP_200_OK)
+        
 class MessageRequestSerializer(serializers.Serializer):
     message = serializers.CharField()
 
