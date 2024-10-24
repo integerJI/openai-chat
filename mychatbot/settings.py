@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta, datetime
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -144,7 +145,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'mychatbot', 'static'),
 ]
 # Static File Settings End
 
@@ -166,3 +167,37 @@ REST_FRAMEWORK = {
 
 # OpenAI API Key 설정
 OPENAI_API_KEY = get_secret("OPENAI_API_KEY")
+
+# Loggin Setting Start
+if not os.path.exists(os.path.join(BASE_DIR, 'logs')):
+    os.makedirs(os.path.join(BASE_DIR, 'logs'))
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {'format': '%(asctime)s %(levelname)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', f'logs-{datetime.now().strftime("%Y-%m-%d")}.log'),
+            'formatter': 'simple',
+            'encoding': 'utf-8',
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',  # 모든 로그 모니터링
+            'propagate': False,
+        },
+    },
+}
+# Loggin Setting End
