@@ -3,6 +3,10 @@ secrets.json
 .secrets.json
 mychatbot/secrets.json
 .mychatbot/secrets.json
+deploy.sh
+.deploy.sh
+mz-office.pem
+.mz-office.pem
 
 # ENV
 *.env

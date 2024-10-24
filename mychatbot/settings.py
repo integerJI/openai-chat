@@ -56,7 +56,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # app
     'chat',
+    'article',
+    # pip
     'corsheaders',
     'rest_framework',
     'drf_yasg',
